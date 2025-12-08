@@ -14,6 +14,7 @@ public class MoveCamera : MonoBehaviour
         [SerializeField] private float sensMultiplier;
     [SerializeField] private Transform player;
     public Transform camPos;
+    public Transform gunPosition;
 
     void Start(){
         Cursor.lockState = CursorLockMode.Locked;
