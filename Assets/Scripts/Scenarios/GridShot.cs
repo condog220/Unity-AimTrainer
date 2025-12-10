@@ -4,6 +4,8 @@ public class GridShot : GameMode
 {
     private AimTrainManager manager;
     private int maxSpheres = 3;
+    [SerializeField] float minSize = .5f;
+    [SerializeField] float maxSize = 1.5f;
 
     public void StartMode(AimTrainManager manager)
     {
@@ -55,6 +57,8 @@ public class GridShot : GameMode
         }
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, randPoint.position, Quaternion.identity);
+        float randScale = Random.Range(minSize, maxSize);
+        gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
         manager.ActiveTargets.Add(gameObject);
         gameObject.transform.parent = randPoint;
     }
