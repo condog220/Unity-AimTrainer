@@ -51,14 +51,16 @@ public class GridShot : GameMode
         int temp = Random.Range(0, manager.spawnList.Count);
         Transform randPoint = manager.spawnList[temp];
 
-        if(randPoint.childCount > 0)
+        if (randPoint.childCount > 0)
         {
             return;
         }
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, randPoint.position, Quaternion.identity);
-        float randScale = Random.Range(minSize, maxSize);
-        gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
+        if (Settings.randomSize) {
+            float randScale = Random.Range(minSize, maxSize);
+            gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
+        }
         manager.ActiveTargets.Add(gameObject);
         gameObject.transform.parent = randPoint;
     }
