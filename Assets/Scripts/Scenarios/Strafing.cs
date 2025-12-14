@@ -67,6 +67,11 @@ public class Strafing : GameMode
         while(spawnPosition == lastSpawnedPosition);
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, spawnPosition, Quaternion.identity);
+        if (Settings.randomSize)
+        {
+            float randScale = Random.Range(0.5f, 1.5f);
+            gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
+        }
         manager.ActiveTargets.Add(gameObject);
     }
 
