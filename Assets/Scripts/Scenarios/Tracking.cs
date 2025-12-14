@@ -56,6 +56,11 @@ public class Tracking : GameMode
 
         Vector3 spawnPosition = new Vector3(temp, Random.Range(minY, maxY), 5f);
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, spawnPosition, Quaternion.identity);
+        if (Settings.randomSize)
+        {
+            float randScale = Random.Range(0.5f, 1.5f);
+            gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
+        }
         manager.ActiveTargets.Add(gameObject);
 
         MovingTarget movingTarget = gameObject.AddComponent<MovingTarget>();
