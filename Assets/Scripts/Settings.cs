@@ -11,7 +11,6 @@ public class Settings : MonoBehaviour
     [SerializeField] GameObject randomSizeToggle;
     private float volume;
     private float sensitivity;
-    public static bool randomSize = false;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -26,7 +25,7 @@ public class Settings : MonoBehaviour
         sensitivitySlider.value = sensitivity;
         volumeVal.GetComponent<Text>().text = (volume).ToString("0");
         sensitivityVal.GetComponent<Text>().text = sensitivity.ToString("0.00");
-        randomSizeToggle.GetComponent<Toggle>().isOn = randomSize;
+        randomSizeToggle.GetComponent<Toggle>().isOn = SettingsManager.randomSize;
 
     }
 
@@ -52,7 +51,7 @@ public class Settings : MonoBehaviour
 
     public void enableRandomSize()
     {
-        Settings.randomSize = !Settings.randomSize;
+        SettingsManager.randomSize =  randomSizeToggle.GetComponent<Toggle>().isOn;
         SettingsManager.SaveSettings();
     }
 }
