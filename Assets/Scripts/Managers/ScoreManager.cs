@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -5,46 +6,56 @@ public class ScoreManager : MonoBehaviour
 {
 
     public static ScoreManager instance;
+    public static event Action ScoreChanged;
+
+    public const string HighScorePrefix = "HighScore_";
+    private const string LegacyScoreKey = "LastScore";
+
     private int score = 0;
     private float accuracy = 0;
     private int totalShots = 0;
     private int totalHits = 0;
 
-    [SerializeField] GameObject scoreText;
-    [SerializeField] GameObject accuracyText;
+    [SerializeField] TMP_Text scoreText;
+    [SerializeField] TMP_Text accuracyText;
 
-    private TextMeshProUGUI scoreLabel;
-    private TextMeshProUGUI accuracyLabel;
-
-    private const string LegacyScoreKey = "LastScore";
-    private const string HighScorePrefix = "HighScore_";
     private string highScoreKey;
+
+    public string ModeName { get; private set; }
+    public int TotalShots => totalShots;
+    public int TotalHits => totalHits;
 
     void Awake()
     {
         instance = this;
-        scoreLabel = scoreText.GetComponent<TextMeshProUGUI>();
-        accuracyLabel = accuracyText.GetComponent<TextMeshProUGUI>();
+        MigrateLegacyScore();
 
-        // High scores are per mode; the old single key predates that and is adopted by GridShot once.
-        string mode = GameModeSelect.currentMode?.GetType().Name ?? nameof(GridShot);
-        highScoreKey = HighScorePrefix + mode;
-        string gridShotKey = HighScorePrefix + nameof(GridShot);
-        if (PlayerPrefs.HasKey(LegacyScoreKey))
+        // High scores are per mode.
+        ModeName = GameModeSelect.currentMode?.GetType().Name ?? nameof(GridShot);
+        highScoreKey = HighScorePrefix + ModeName;
+    }
+
+    // The old single high-score key predates per-mode scores; GridShot adopts it once.
+    public static void MigrateLegacyScore()
+    {
+        if (!PlayerPrefs.HasKey(LegacyScoreKey))
         {
-            if (!PlayerPrefs.HasKey(gridShotKey))
-            {
-                PlayerPrefs.SetInt(gridShotKey, PlayerPrefs.GetInt(LegacyScoreKey));
-            }
-            PlayerPrefs.DeleteKey(LegacyScoreKey);
-            PlayerPrefs.Save();
+            return;
         }
+        string gridShotKey = HighScorePrefix + nameof(GridShot);
+        if (!PlayerPrefs.HasKey(gridShotKey))
+        {
+            PlayerPrefs.SetInt(gridShotKey, PlayerPrefs.GetInt(LegacyScoreKey));
+        }
+        PlayerPrefs.DeleteKey(LegacyScoreKey);
+        PlayerPrefs.Save();
     }
 
     public void updateScore()
     {
         score += 200;
-        scoreLabel.text = score.ToString();
+        scoreText.text = score.ToString();
+        ScoreChanged?.Invoke();
     }
 
     public void updateAccuracy()
@@ -56,7 +67,7 @@ public class ScoreManager : MonoBehaviour
         {
             accuracy = ((float)totalHits / (float)totalShots) * 100f;
         }
-        accuracyLabel.text = accuracy.ToString("F2") + "%";
+        accuracyText.text = accuracy.ToString("F2") + "%";
     }
 
     public void registerShot(bool hit)
@@ -86,18 +97,20 @@ public class ScoreManager : MonoBehaviour
         score = 0;
         totalShots = 0;
         totalHits = 0;
-        scoreLabel.text = "0";
+        scoreText.text = "0";
         updateAccuracy();
     }
 
-    // Call once when the round ends.
-    public void SubmitScore()
+    // Call once when the round ends. Returns true if this score is a new personal best.
+    public bool SubmitScore()
     {
         if (score > getHighScore())
         {
             PlayerPrefs.SetInt(highScoreKey, score);
             PlayerPrefs.Save();
+            return true;
         }
+        return false;
     }
 
     public int getHighScore() {

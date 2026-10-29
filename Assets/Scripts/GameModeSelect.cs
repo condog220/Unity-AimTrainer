@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameModeSelect : MonoBehaviour
 {
@@ -22,19 +21,19 @@ public class GameModeSelect : MonoBehaviour
 
     public void loadGridShot() {
         currentMode = new GridShot();
-        SceneManager.LoadScene("SampleScene");
+        SceneFader.Load("SampleScene");
 
     }
 
     public void loadTracking()
     {
         currentMode = new Tracking();
-        SceneManager.LoadScene("SampleScene");
+        SceneFader.Load("SampleScene");
     }
 
     public void loadStrafing()
     {
         currentMode = new Strafing();
-        SceneManager.LoadScene("SampleScene");
+        SceneFader.Load("SampleScene");
     }
 }

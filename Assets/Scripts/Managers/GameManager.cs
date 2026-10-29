@@ -1,29 +1,23 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static float timer;
     public static bool finished;
-    [SerializeField] GameObject timerText;
+    [SerializeField] TMP_Text timerText;
     [SerializeField] GameObject resultScreen;
-    [SerializeField] GameObject scoreResult;
-    [SerializeField] GameObject accuracyResult;
-    [SerializeField] GameObject highScoreResult;
-
-    private TextMeshProUGUI timerLabel;
-    private TextMeshProUGUI scoreLabel;
-    private TextMeshProUGUI accuracyLabel;
-    private TextMeshProUGUI highScoreLabel;
+    [SerializeField] TMP_Text scoreResult;
+    [SerializeField] TMP_Text accuracyResult;
+    [SerializeField] TMP_Text highScoreResult;
+    [SerializeField] TMP_Text shotsResult;
+    [SerializeField] TMP_Text modeResult;
+    [SerializeField] GameObject newRecordBadge;
 
     private void Awake()
     {
         timer = 30f;
         finished = false;
-        timerLabel = timerText.GetComponent<TextMeshProUGUI>();
-        scoreLabel = scoreResult.GetComponent<TextMeshProUGUI>();
-        accuracyLabel = accuracyResult.GetComponent<TextMeshProUGUI>();
-        highScoreLabel = highScoreResult.GetComponent<TextMeshProUGUI>();
     }
 
     // Update is called once per frame
@@ -44,26 +38,39 @@ public class GameManager : MonoBehaviour
         if (timer <= 0)
         {
             timer = 0;
-            timerLabel.text = "0";
+            timerText.text = "0";
             resultsScreen();
             return;
         }
-        timerLabel.text = Mathf.CeilToInt(timer).ToString();
+        timerText.text = Mathf.CeilToInt(timer).ToString();
     }
 
     public void resultsScreen()
     {
         finished = true;
         PauseScript.isPaused = true;
-        resultScreen.SetActive(true);
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        ScoreManager.instance.SubmitScore();
-        scoreLabel.text = ScoreManager.instance.getScore().ToString();
-        accuracyLabel.text = ScoreManager.instance.getAccuracy().ToString("F2") + "%";
-        highScoreLabel.text = ScoreManager.instance.getHighScore().ToString();
+        ScoreManager score = ScoreManager.instance;
+        bool newRecord = score.SubmitScore();
+        scoreResult.text = score.getScore().ToString();
+        accuracyResult.text = score.getAccuracy().ToString("F2") + "%";
+        highScoreResult.text = score.getHighScore().ToString();
+        if (shotsResult != null)
+        {
+            shotsResult.text = score.TotalHits + " / " + score.TotalShots;
+        }
+        if (modeResult != null)
+        {
+            modeResult.text = UITheme.ModeDisplayName(score.ModeName);
+        }
+        if (newRecordBadge != null)
+        {
+            newRecordBadge.SetActive(newRecord);
+        }
+        resultScreen.SetActive(true);
 
     }
 

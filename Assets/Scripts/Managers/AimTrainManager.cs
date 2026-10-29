@@ -88,6 +88,10 @@ public class AimTrainManager : MonoBehaviour
             currentGameMode.HandleHit(hit.collider.gameObject);
             ScoreManager.instance.updateScore();
             ScoreManager.instance.registerShot(true);
+            if (Crosshair.instance != null)
+            {
+                Crosshair.instance.Flash();
+            }
         }
         else
         {
