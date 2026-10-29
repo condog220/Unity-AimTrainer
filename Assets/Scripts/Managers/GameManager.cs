@@ -1,24 +1,23 @@
-using System;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static float timer;
-    [SerializeField] GameObject timerText;
+    public static bool finished;
+    [SerializeField] TMP_Text timerText;
     [SerializeField] GameObject resultScreen;
-    [SerializeField] GameObject scoreResult;
-    [SerializeField] GameObject accuracyResult;
-    [SerializeField] GameObject highScoreResult;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
+    [SerializeField] TMP_Text scoreResult;
+    [SerializeField] TMP_Text accuracyResult;
+    [SerializeField] TMP_Text highScoreResult;
+    [SerializeField] TMP_Text shotsResult;
+    [SerializeField] TMP_Text modeResult;
+    [SerializeField] GameObject newRecordBadge;
 
     private void Awake()
     {
         timer = 30f;
+        finished = false;
     }
 
     // Update is called once per frame
@@ -30,31 +29,48 @@ public class GameManager : MonoBehaviour
 
     public void CountDownTimer()
     {
-        if (timer > 0)
+        if (finished)
         {
-            timer -= Time.deltaTime;
-            timerText.GetComponent<TMPro.TextMeshProUGUI>().text = Convert.ToInt32(timer % 60).ToString();
+            return;
         }
+
+        timer -= Time.deltaTime;
         if (timer <= 0)
         {
             timer = 0;
+            timerText.text = "0";
             resultsScreen();
+            return;
         }
-
-
+        timerText.text = Mathf.CeilToInt(timer).ToString();
     }
 
     public void resultsScreen()
     {
+        finished = true;
         PauseScript.isPaused = true;
-        resultScreen.SetActive(true);
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        scoreResult.GetComponent<TMPro.TextMeshProUGUI>().text = ScoreManager.instance.getScore().ToString();
-        accuracyResult.GetComponent<TMPro.TextMeshProUGUI>().text = ScoreManager.instance.getAccuracy().ToString("F2") + "%";
-        highScoreResult.GetComponent<TMPro.TextMeshProUGUI>().text = ScoreManager.instance.getHighScore().ToString();
+        ScoreManager score = ScoreManager.instance;
+        bool newRecord = score.SubmitScore();
+        scoreResult.text = score.getScore().ToString();
+        accuracyResult.text = score.getAccuracy().ToString("F2") + "%";
+        highScoreResult.text = score.getHighScore().ToString();
+        if (shotsResult != null)
+        {
+            shotsResult.text = score.TotalHits + " / " + score.TotalShots;
+        }
+        if (modeResult != null)
+        {
+            modeResult.text = UITheme.ModeDisplayName(score.ModeName);
+        }
+        if (newRecordBadge != null)
+        {
+            newRecordBadge.SetActive(newRecord);
+        }
+        resultScreen.SetActive(true);
 
     }
 
@@ -64,10 +80,15 @@ public class GameManager : MonoBehaviour
         resultScreen.SetActive(false);
 
         timer = 30f;
+        finished = false;
 
         if (ScoreManager.instance != null)
         {
             ScoreManager.instance.resetScore();
+        }
+        if (AimTrainManager.instance != null)
+        {
+            AimTrainManager.instance.RestartMode();
         }
         PauseScript.isPaused = false;
         Cursor.lockState = CursorLockMode.Locked;

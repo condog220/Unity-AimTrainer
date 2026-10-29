@@ -11,14 +11,18 @@ public class SettingsManager : MonoBehaviour
     private const string SensitivityKey = "GameSensitivity";
     private const string randomSizeKey = "RandomSize";
     private static SettingsManager instance;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    // Awake (not Start) so a duplicate from returning to the Menu is destroyed before it does anything.
+    void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         instance = this;
-        DontDestroyOnLoad(this.gameObject);
+        DontDestroyOnLoad(gameObject);
         LoadSettings();
-
-
     }
 
     public static void SaveSettings()

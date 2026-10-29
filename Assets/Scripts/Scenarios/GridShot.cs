@@ -7,6 +7,9 @@ public class GridShot : GameMode
     [SerializeField] float minSize = .5f;
     [SerializeField] float maxSize = 1.5f;
 
+    public bool AutoFire => false;
+    public bool UsesMovement => false;
+
     public void StartMode(AimTrainManager manager)
     {
         this.manager = manager;
@@ -42,7 +45,7 @@ public class GridShot : GameMode
 
     private void SpawnTarget()
     {
-        if (manager.ActiveTargets.Count >= maxSpheres)
+        if (manager.ActiveTargets.Count >= maxSpheres || manager.spawnList.Count == 0)
         {
             return;
         }
@@ -65,8 +68,13 @@ public class GridShot : GameMode
         gameObject.transform.parent = randPoint;
     }
 
-        public void EndMode()
+    public void EndMode()
     {
+        if (manager == null)
+        {
+            return;
+        }
+
         foreach (var target in manager.ActiveTargets)
         {
             Object.Destroy(target);

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Strafing : GameMode
@@ -7,17 +6,15 @@ public class Strafing : GameMode
     private AimTrainManager manager;
     private int maxSpheres = 1;
 
-    [Header("Boundaries")]
     private float minX = -4f;
     private float maxX = 4f;
     private float minY = 2f;
     private float maxY = 6f;
 
-
-    private GameObject player;
-
     private Vector3 lastSpawnedPosition = Vector3.positiveInfinity;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    public bool AutoFire => false;
+    public bool UsesMovement => true;
 
     public void StartMode(AimTrainManager manager)
     {
@@ -58,13 +55,13 @@ public class Strafing : GameMode
         {
             return;
         }
-        float temp = Random.Range(minX, maxX);
 
         do
         {
-            spawnPosition = new Vector3(temp, Random.Range(minY, maxY), 5f);
+            spawnPosition = new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), 5f);
         }
         while(spawnPosition == lastSpawnedPosition);
+        lastSpawnedPosition = spawnPosition;
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, spawnPosition, Quaternion.identity);
         if (SettingsManager.randomSize)
@@ -77,6 +74,15 @@ public class Strafing : GameMode
 
     public void EndMode()
     {
+        if (manager == null)
+        {
+            return;
+        }
+
+        foreach (var target in manager.ActiveTargets)
+        {
+            Object.Destroy(target);
+        }
         manager.ActiveTargets.Clear();
     }
 }

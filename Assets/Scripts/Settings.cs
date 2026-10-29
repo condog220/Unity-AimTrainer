@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,11 +7,9 @@ public class Settings : MonoBehaviour
 
     [SerializeField] Slider volumeSlider;
     [SerializeField] Slider sensitivitySlider;
-    [SerializeField] GameObject volumeVal;
-    [SerializeField] GameObject sensitivityVal;
-    [SerializeField] GameObject randomSizeToggle;
-    private float volume;
-    private float sensitivity;
+    [SerializeField] TMP_Text volumeVal;
+    [SerializeField] TMP_Text sensitivityVal;
+    [SerializeField] Toggle randomSizeToggle;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -18,40 +17,42 @@ public class Settings : MonoBehaviour
     {
         SettingsManager.LoadSettings();
 
-        volume = (int)(SettingsManager.volume * 100);
-        sensitivity = SettingsManager.sensitivity;
-
-        volumeSlider.value = volume;
-        sensitivitySlider.value = sensitivity;
-        volumeVal.GetComponent<Text>().text = (volume).ToString("0");
-        sensitivityVal.GetComponent<Text>().text = sensitivity.ToString("0.00");
-        randomSizeToggle.GetComponent<Toggle>().isOn = SettingsManager.randomSize;
+        // Sliders are 0-1. Set without notify so opening the scene never overwrites saved values.
+        volumeSlider.SetValueWithoutNotify(SettingsManager.volume);
+        sensitivitySlider.SetValueWithoutNotify(SettingsManager.sensitivity);
+        volumeVal.text = VolumeLabel(SettingsManager.volume);
+        sensitivityVal.text = SensitivityLabel(SettingsManager.sensitivity);
+        randomSizeToggle.SetIsOnWithoutNotify(SettingsManager.randomSize);
 
     }
 
-    // Update is called once per frame
-    void Update()
+    private static string VolumeLabel(float vol)
     {
-        
+        return (vol * 100).ToString("0") + "%";
+    }
+
+    private static string SensitivityLabel(float sens)
+    {
+        return sens.ToString("0.00");
     }
 
     public void SetVolume(float vol)
     {
         SettingsManager.volume = vol;
-        SettingsManager.SaveSettings();       
-        volumeVal.GetComponent<Text>().text = (vol * 100).ToString("0");
+        SettingsManager.SaveSettings();
+        volumeVal.text = VolumeLabel(vol);
     }
 
     public void SetSensitivity(float sens)
     {
         SettingsManager.sensitivity = sens;
         SettingsManager.SaveSettings();
-        sensitivityVal.GetComponent<Text>().text = sens.ToString("0.00");
+        sensitivityVal.text = SensitivityLabel(sens);
     }
 
-    public void enableRandomSize()
+    public void SetRandomSize(bool on)
     {
-        SettingsManager.randomSize =  randomSizeToggle.GetComponent<Toggle>().isOn;
+        SettingsManager.randomSize = on;
         SettingsManager.SaveSettings();
     }
 }

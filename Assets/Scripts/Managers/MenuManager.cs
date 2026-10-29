@@ -1,38 +1,41 @@
-using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void quitApp()
     {
-        Console.Out.WriteLine("Quit Application");
+        Debug.Log("Quit Application");
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
     }
 
     public void playGame()
     {
-        SceneManager.LoadScene("SelectMode");
+        ResetState();
+        SceneFader.Load("SelectMode");
     }
 
     public void toMenu()
     {
-        SceneManager.LoadScene("Assets/Scenes/Menu.unity");
+        ResetState();
+        SceneFader.Load("Menu");
     }
 
     public void toSettings()
     {
-        SceneManager.LoadScene("Assets/Scenes/Settings.unity");
+        ResetState();
+        SceneFader.Load("Settings");
+    }
+
+    // The pause and results screens freeze time and free the cursor; never carry that into another scene.
+    private static void ResetState()
+    {
+        Time.timeScale = 1f;
+        PauseScript.isPaused = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
