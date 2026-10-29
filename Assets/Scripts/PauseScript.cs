@@ -18,6 +18,12 @@ public class PauseScript : MenuManager
     // Update is called once per frame
     void Update()
     {
+        // The results screen owns the pause state once the round is over.
+        if (GameManager.finished)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Debug.Log("Escape Pressed");

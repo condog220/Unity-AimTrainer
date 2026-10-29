@@ -1,9 +1,10 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class AimTrainManager : MonoBehaviour
 {
+    public static AimTrainManager instance;
+
     public List<Transform> spawnList = new List<Transform>();
     public LayerMask layer;
     [SerializeField] AudioSource hitSound;
@@ -11,16 +12,21 @@ public class AimTrainManager : MonoBehaviour
     [SerializeField] public GameObject spherePrefab;
 
 
-    private float fireRate = 0.2f;
+    [SerializeField] private float fireRate = 0.2f;
     private float nextFire = 0f;
 
+    private Camera cam;
     private GameMode currentGameMode;
     public List<GameObject> ActiveTargets { get; private set; } = new List<GameObject>();
 
+    void Awake()
+    {
+        instance = this;
+    }
 
     void Start()
     {
-
+        cam = Camera.main;
         hitSound.volume = SettingsManager.volume;
         if(GameModeSelect.currentMode != null)
         {
@@ -37,20 +43,15 @@ public class AimTrainManager : MonoBehaviour
     {
         currentGameMode.Update();
 
-        if (Input.GetMouseButtonDown(0) && currentGameMode is GridShot || Input.GetMouseButtonDown(0) && currentGameMode is Strafing)
+        bool fire = currentGameMode.AutoFire
+            ? Input.GetMouseButton(0) && Time.time > nextFire
+            : Input.GetMouseButtonDown(0);
+
+        if (fire)
         {
+            nextFire = Time.time + fireRate;
             DetectHit();
         }
-
-        else if(currentGameMode is Tracking)
-        {
-            if(Input.GetMouseButton(0) && Time.time > nextFire)
-            {
-                nextFire = Time.time + fireRate;
-                DetectHit();
-            }
-        }
-
     }
 
     public void SetScenario(GameMode scenario)
@@ -64,6 +65,13 @@ public class AimTrainManager : MonoBehaviour
         currentGameMode.StartMode(this);
     }
 
+    // Starts a fresh round of the current mode (EndMode clears targets, StartMode respawns them).
+    public void RestartMode()
+    {
+        nextFire = 0f;
+        SetScenario(currentGameMode);
+    }
+
 
     private void DetectHit()
     {
@@ -72,26 +80,14 @@ public class AimTrainManager : MonoBehaviour
             return;
         }
 
-        bool rayHit = Physics.Raycast(Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f)), out RaycastHit hit, Mathf.Infinity, layer);
+        bool rayHit = Physics.Raycast(cam.ViewportPointToRay(new Vector3(0.5f, 0.5f)), out RaycastHit hit, Mathf.Infinity, layer);
 
         if (rayHit)
         {
-            if (currentGameMode is GridShot || currentGameMode is Strafing)
-            {
-                Destroy(hit.collider.gameObject);
-                hitSound.PlayOneShot(hitClip);
-                currentGameMode.HandleHit(hit.collider.gameObject);
-                ScoreManager.instance.updateScore();
-                ScoreManager.instance.registerShot(true);
-            }
-            else if (currentGameMode is Tracking)
-            {
-                currentGameMode.HandleHit(hit.collider.gameObject);
-                hitSound.PlayOneShot(hitClip);
-                ScoreManager.instance.updateScore();
-                ScoreManager.instance.registerShot(true);
-            }
-
+            hitSound.PlayOneShot(hitClip);
+            currentGameMode.HandleHit(hit.collider.gameObject);
+            ScoreManager.instance.updateScore();
+            ScoreManager.instance.registerShot(true);
         }
         else
         {

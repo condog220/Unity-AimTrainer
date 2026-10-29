@@ -1,5 +1,5 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ScoreManager : MonoBehaviour
 {
@@ -13,26 +13,38 @@ public class ScoreManager : MonoBehaviour
     [SerializeField] GameObject scoreText;
     [SerializeField] GameObject accuracyText;
 
-    private const string LastScoreKey = "LastScore";
+    private TextMeshProUGUI scoreLabel;
+    private TextMeshProUGUI accuracyLabel;
 
+    private const string LegacyScoreKey = "LastScore";
+    private const string HighScorePrefix = "HighScore_";
+    private string highScoreKey;
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
     {
-        instance = this;  
-    }
+        instance = this;
+        scoreLabel = scoreText.GetComponent<TextMeshProUGUI>();
+        accuracyLabel = accuracyText.GetComponent<TextMeshProUGUI>();
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        // High scores are per mode; the old single key predates that and is adopted by GridShot once.
+        string mode = GameModeSelect.currentMode?.GetType().Name ?? nameof(GridShot);
+        highScoreKey = HighScorePrefix + mode;
+        string gridShotKey = HighScorePrefix + nameof(GridShot);
+        if (PlayerPrefs.HasKey(LegacyScoreKey))
+        {
+            if (!PlayerPrefs.HasKey(gridShotKey))
+            {
+                PlayerPrefs.SetInt(gridShotKey, PlayerPrefs.GetInt(LegacyScoreKey));
+            }
+            PlayerPrefs.DeleteKey(LegacyScoreKey);
+            PlayerPrefs.Save();
+        }
     }
 
     public void updateScore()
     {
         score += 200;
-        scoreText.GetComponent<TMPro.TextMeshProUGUI>().text = score.ToString();
+        scoreLabel.text = score.ToString();
     }
 
     public void updateAccuracy()
@@ -43,8 +55,8 @@ public class ScoreManager : MonoBehaviour
         else
         {
             accuracy = ((float)totalHits / (float)totalShots) * 100f;
-            accuracyText.GetComponent<TMPro.TextMeshProUGUI>().text = accuracy.ToString("F2") + "%";
         }
+        accuracyLabel.text = accuracy.ToString("F2") + "%";
     }
 
     public void registerShot(bool hit)
@@ -61,14 +73,12 @@ public class ScoreManager : MonoBehaviour
 
     public int getScore()
     {
-        if (score > PlayerPrefs.GetInt(LastScoreKey, 0))
-            saveScore();
         return score;
     }
 
-    public int getAccuracy()
+    public float getAccuracy()
     {
-        return (int)accuracy;
+        return accuracy;
     }
 
     public void resetScore()
@@ -76,15 +86,22 @@ public class ScoreManager : MonoBehaviour
         score = 0;
         totalShots = 0;
         totalHits = 0;
+        scoreLabel.text = "0";
+        updateAccuracy();
     }
 
-    private void saveScore()
+    // Call once when the round ends.
+    public void SubmitScore()
     {
-        PlayerPrefs.SetInt("LastScore", score);
+        if (score > getHighScore())
+        {
+            PlayerPrefs.SetInt(highScoreKey, score);
+            PlayerPrefs.Save();
+        }
     }
 
     public int getHighScore() {
-        return PlayerPrefs.GetInt(LastScoreKey, 0);
+        return PlayerPrefs.GetInt(highScoreKey, 0);
     }
 
 

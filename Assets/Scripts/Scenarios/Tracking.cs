@@ -11,9 +11,13 @@ public class Tracking : GameMode
     private float minY = 2f;
     private float maxY = 6f;
 
+    public bool AutoFire => true;
+    public bool UsesMovement => false;
+
     public void StartMode(AimTrainManager manager)
     {
         this.manager = manager;
+        health = 100;
 
         for (int i = 0; i < maxSpheres; i++)
         {
@@ -32,11 +36,6 @@ public class Tracking : GameMode
     public void HandleHit(GameObject target)
     {
         health -= 20;
-
-        if (manager.ActiveTargets.Count < maxSpheres)
-        {
-            SpawnTarget();
-        }
 
         if(health <= 0)
         {
@@ -70,6 +69,15 @@ public class Tracking : GameMode
 
     public void EndMode()
     {
+        if (manager == null)
+        {
+            return;
+        }
+
+        foreach (var target in manager.ActiveTargets)
+        {
+            Object.Destroy(target);
+        }
         manager.ActiveTargets.Clear();
     }
 
