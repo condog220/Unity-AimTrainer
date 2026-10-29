@@ -9,19 +9,21 @@ public class GameModeSelect : MonoBehaviour
     void Start()
     {
         Time.timeScale = 1.0f;
-        
+        // Drop any mode left over from the previous round.
+        currentMode = null;
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public void loadGridShot() {
         currentMode = new GridShot();
         SceneManager.LoadScene("SampleScene");
-        
+
     }
 
     public void loadTracking()

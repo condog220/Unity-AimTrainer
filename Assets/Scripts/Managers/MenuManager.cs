@@ -1,38 +1,36 @@
-using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void quitApp()
     {
-        Console.Out.WriteLine("Quit Application");
+        Debug.Log("Quit Application");
         Application.Quit();
     }
 
     public void playGame()
     {
+        ResetTime();
         SceneManager.LoadScene("SelectMode");
     }
 
     public void toMenu()
     {
-        SceneManager.LoadScene("Assets/Scenes/Menu.unity");
+        ResetTime();
+        SceneManager.LoadScene("Menu");
     }
 
     public void toSettings()
     {
-        SceneManager.LoadScene("Assets/Scenes/Settings.unity");
+        ResetTime();
+        SceneManager.LoadScene("Settings");
+    }
+
+    // The pause and results screens freeze time; never carry that into another scene.
+    private static void ResetTime()
+    {
+        Time.timeScale = 1f;
+        PauseScript.isPaused = false;
     }
 }

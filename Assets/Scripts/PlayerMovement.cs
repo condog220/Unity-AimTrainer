@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
 
@@ -7,7 +8,6 @@ public class PlayerMovement : MonoBehaviour
     public Transform orientation;
 
     public float horizontalInput;
-    public float verticalInput;
     Vector3 moveDirection;
     Rigidbody rb;
 
@@ -23,7 +23,7 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         moveInput();
-        
+
     }
 
     private void FixedUpdate()
@@ -33,10 +33,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void moveInput()
     {
-        if(GameModeSelect.currentMode is Strafing)
+        if(GameModeSelect.currentMode?.UsesMovement == true)
         {
             horizontalInput = Input.GetAxisRaw("Horizontal");
-            verticalInput = Input.GetAxisRaw("Vertical");
         }
     }
 
