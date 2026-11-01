@@ -64,6 +64,7 @@ public class Strafing : GameMode
         lastSpawnedPosition = spawnPosition;
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, spawnPosition, Quaternion.identity);
+        SettingsManager.ApplyTargetColor(gameObject);
         if (SettingsManager.randomSize)
         {
             float randScale = Random.Range(0.5f, 1.5f);

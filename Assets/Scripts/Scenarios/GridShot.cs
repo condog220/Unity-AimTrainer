@@ -60,6 +60,7 @@ public class GridShot : GameMode
         }
 
         GameObject gameObject = Object.Instantiate(manager.spherePrefab, randPoint.position, Quaternion.identity);
+        SettingsManager.ApplyTargetColor(gameObject);
         if (SettingsManager.randomSize) {
             float randScale = Random.Range(minSize, maxSize);
             gameObject.transform.localScale = new Vector3(randScale, randScale, randScale);
