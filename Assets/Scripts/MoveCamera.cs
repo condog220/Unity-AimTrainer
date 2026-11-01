@@ -14,6 +14,7 @@ public class MoveCamera : MonoBehaviour
     void Start(){
         Cursor.lockState = CursorLockMode.Locked;
         userSens = SettingsManager.sensitivity;
+        GetComponent<Camera>().fieldOfView = SettingsManager.fov;
     }
 
     // LateUpdate so the camera follows the Rigidbody player after physics has moved it.

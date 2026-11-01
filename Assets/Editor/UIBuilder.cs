@@ -147,7 +147,7 @@ public static class UIBuilder
 
         TextMeshProUGUI title = Txt("Title", root, "SELECT MODE", 84f, UITheme.TextPrimary, FontStyles.Bold);
         Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -50f), new Vector2(1200f, 120f));
-        TextMeshProUGUI sub = Txt("Subtitle", root, "Every round lasts 30 seconds. Your best score is saved per mode.", 30f, UITheme.TextMuted);
+        TextMeshProUGUI sub = Txt("Subtitle", root, "Pick a mode, then choose how long the round lasts.", 30f, UITheme.TextMuted);
         Place(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(1400f, 44f));
 
         RectTransform row = NewRect("Cards", root);
@@ -157,13 +157,56 @@ public static class UIBuilder
 
         Sprite grid = LoadSprite("Assets/Images/gridshot.png");
         Sprite strafe = LoadSprite("Assets/Images/Circlestrafing_animation.png");
-        ModeCard(row, "GridShot", "Pop three targets on a fixed grid. Click each one as fast as you can.", grid, "GridShot", select.loadGridShot);
-        ModeCard(row, "TrackShot", "Hold fire and keep your crosshair glued to a moving target.", sTracking, "Tracking", select.loadTracking);
-        ModeCard(row, "StrafeShot", "Strafe with A / D while flicking to targets around the arena.", strafe, "Strafing", select.loadStrafing);
+        ModeCard(row, "GridShot", "Pop three targets on a fixed grid. Click each one as fast as you can.", grid, "GridShot", select.PickGridShot);
+        ModeCard(row, "TrackShot", "Hold fire and keep your crosshair glued to a moving target.", sTracking, "Tracking", select.PickTracking);
+        ModeCard(row, "StrafeShot", "Strafe with A / D while flicking to targets around the arena.", strafe, "Strafing", select.PickStrafing);
+
+        BuildLengthPicker(root, select);
 
         Button back = Btn("BackButton", root, "< Back", new Vector2(220f, 70f), false, 30f);
         Place(back.GetComponent<RectTransform>(), new Vector2(0f, 0f), new Vector2(60f, 50f), new Vector2(220f, 70f));
         Wire(back, menu.toMenu);
+    }
+
+    // Modal opened by a mode card: choose a round length, then start.
+    private static void BuildLengthPicker(RectTransform root, GameModeSelect select)
+    {
+        GameObject panel = Overlay(root, "LengthPanel", 760f, out RectTransform card);
+
+        TextMeshProUGUI title = Txt("ModeTitle", card, "GRIDSHOT", 56f, UITheme.TextPrimary, FontStyles.Bold);
+        LE(title.gameObject, h: 70f);
+        TextMeshProUGUI sub = Txt("Subtitle", card, "Choose round length", 30f, UITheme.TextMuted);
+        LE(sub.gameObject, h: 44f);
+
+        RectTransform row = NewRect("Lengths", card);
+        LE(row.gameObject, 640f, 110f);
+        HStack(row, 24f, TextAnchor.MiddleCenter);
+        Button b15 = Btn("Length15", row, "15s", new Vector2(190f, 100f), false, 44f);
+        Button b30 = Btn("Length30", row, "30s", new Vector2(190f, 100f), false, 44f);
+        Button b60 = Btn("Length60", row, "60s", new Vector2(190f, 100f), false, 44f);
+        Wire(b15, select.SetLength15);
+        Wire(b30, select.SetLength30);
+        Wire(b60, select.SetLength60);
+
+        Spacer(card, 6f);
+        Button start = Btn("StartButton", card, "START", new Vector2(360f, 76f), true, 36f);
+        Wire(start, select.StartRound);
+        Button cancel = Btn("CancelButton", card, "Cancel", new Vector2(360f, 64f), false, 30f);
+        Wire(cancel, select.ClosePicker);
+
+        Assign(select, "lengthPanel", panel);
+        Assign(select, "lengthTitle", title);
+        SerializedObject so = new SerializedObject(select);
+        SerializedProperty buttons = so.FindProperty("lengthButtons");
+        Button[] all = { b15, b30, b60 };
+        buttons.arraySize = all.Length;
+        for (int i = 0; i < all.Length; i++)
+        {
+            buttons.GetArrayElementAtIndex(i).objectReferenceValue = all[i];
+        }
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        panel.SetActive(false);
     }
 
     private static void ModeCard(Transform row, string title, string description, Sprite preview, string modeKey, UnityAction onClick)
@@ -219,58 +262,133 @@ public static class UIBuilder
         Backdrop(root);
 
         Image card = Img("Card", root, UITheme.Surface, sRounded, true);
-        Place(card.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100f, 100f));
-        VStack(card.rectTransform, 30f, TextAnchor.UpperCenter, 56);
+        Place(card.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 100f));
+        VStack(card.rectTransform, 22f, TextAnchor.UpperCenter, 40);
         FitContent(card.rectTransform);
         AddShadow(card.gameObject);
 
         TextMeshProUGUI title = Txt("Title", card.transform, "SETTINGS", 72f, UITheme.TextPrimary, FontStyles.Bold);
         LE(title.gameObject, h: 90f);
 
-        Slider volume = SliderRow(card.transform, "Volume", out TextMeshProUGUI volumeValue, "100%");
-        Slider sensitivity = SliderRow(card.transform, "Sensitivity", out TextMeshProUGUI sensitivityValue, "1.00");
+        RectTransform columns = NewRect("Columns", card.transform);
+        HStack(columns, 80f, TextAnchor.UpperCenter);
 
-        RectTransform toggleRow = NewRect("RandomSizeRow", card.transform);
-        LE(toggleRow.gameObject, 960f, 64f);
+        // ---- left column: general settings
+        const float leftWidth = 760f;
+        RectTransform left = NewRect("General", columns);
+        VStack(left, 22f, TextAnchor.UpperCenter);
+        LE(left.gameObject, leftWidth);
+
+        Slider volume = SliderRow(left, "Volume", out TextMeshProUGUI volumeValue, "100%", leftWidth, 220f);
+        Slider sensitivity = SliderRow(left, "Sensitivity", out TextMeshProUGUI sensitivityValue, "1.00", leftWidth, 220f);
+        Slider fovSlider = SliderRow(left, "FOV", out TextMeshProUGUI fovValue, "90\u00B0", leftWidth, 220f);
+        fovSlider.minValue = SettingsManager.MinFov;
+        fovSlider.maxValue = SettingsManager.MaxFov;
+        fovSlider.wholeNumbers = true;
+
+        RectTransform toggleRow = NewRect("RandomSizeRow", left);
+        LE(toggleRow.gameObject, leftWidth, 64f);
         HStack(toggleRow, 24f, TextAnchor.MiddleLeft);
         TextMeshProUGUI toggleLabel = Txt("Label", toggleRow, "Random target size", 36f, UITheme.TextPrimary, FontStyles.Normal, TextAlignmentOptions.Left);
         LE(toggleLabel.gameObject, fw: 1f);
         Toggle randomSize = NewToggle(toggleRow);
 
-        Image divider = Img("Divider", card.transform, new Color(1f, 1f, 1f, 0.12f), null);
-        LE(divider.gameObject, 960f, 2f);
+        Image divider = Img("Divider", left, new Color(1f, 1f, 1f, 0.12f), null);
+        LE(divider.gameObject, leftWidth, 2f);
 
-        TextMeshProUGUI controlsTitle = Txt("ControlsTitle", card.transform, "CONTROLS", 24f, UITheme.TextMuted, FontStyles.Bold);
+        TextMeshProUGUI controlsTitle = Txt("ControlsTitle", left, "CONTROLS", 24f, UITheme.TextMuted, FontStyles.Bold);
         LE(controlsTitle.gameObject, h: 32f);
-        TextMeshProUGUI controls = Txt("Controls", card.transform,
+        TextMeshProUGUI controls = Txt("Controls", left,
             "Mouse  -  aim\nLeft click  -  shoot\nA / D  -  strafe (StrafeShot)\nEsc  -  pause", 28f, UITheme.TextPrimary);
         LE(controls.gameObject, h: 150f);
+
+        // ---- right column: target colour
+        const float rightWidth = 680f;
+        RectTransform right = NewRect("TargetColour", columns);
+        VStack(right, 22f, TextAnchor.UpperCenter);
+        LE(right.gameObject, rightWidth);
+
+        TextMeshProUGUI colourTitle = Txt("ColourTitle", right, "TARGET COLOUR", 24f, UITheme.TextMuted, FontStyles.Bold);
+        LE(colourTitle.gameObject, h: 32f);
+
+        RectTransform previewRow = NewRect("PreviewRow", right);
+        LE(previewRow.gameObject, rightWidth, 130f);
+        HStack(previewRow, 28f, TextAnchor.MiddleLeft);
+        Image preview = Img("Preview", previewRow, SettingsManager.DefaultTargetColor, sRounded, true);
+        LE(preview.gameObject, 260f, 130f);
+        TextMeshProUGUI hex = Txt("Hex", previewRow, "#FF1700", 44f, UITheme.TextPrimary, FontStyles.Bold, TextAlignmentOptions.Left);
+        LE(hex.gameObject, fw: 1f);
+
+        RectTransform swatchRow = NewRect("Swatches", right);
+        LE(swatchRow.gameObject, rightWidth, 60f);
+        HStack(swatchRow, 14f, TextAnchor.MiddleLeft);
+        Button[] swatchButtons = new Button[Settings.Swatches.Length];
+        for (int i = 0; i < swatchButtons.Length; i++)
+        {
+            Image swatch = Img("Swatch" + i, swatchRow, Settings.Swatches[i], sCircle, false, true);
+            LE(swatch.gameObject, 56f, 56f);
+            Button button = swatch.gameObject.AddComponent<Button>();
+            button.targetGraphic = swatch;
+            Tint(button);
+            AddFx(swatch.gameObject, 1.15f);
+            swatchButtons[i] = button;
+        }
+
+        Slider red = SliderRow(right, "Red", out TextMeshProUGUI redValue, "255", rightWidth, 130f);
+        Slider green = SliderRow(right, "Green", out TextMeshProUGUI greenValue, "255", rightWidth, 130f);
+        Slider blue = SliderRow(right, "Blue", out TextMeshProUGUI blueValue, "255", rightWidth, 130f);
+        foreach (Slider channel in new[] { red, green, blue })
+        {
+            channel.minValue = 0f;
+            channel.maxValue = 255f;
+            channel.wholeNumbers = true;
+        }
 
         Button back = Btn("BackButton", card.transform, "BACK", new Vector2(360f, 76f), true);
 
         Assign(settings, "volumeSlider", volume);
         Assign(settings, "sensitivitySlider", sensitivity);
+        Assign(settings, "fovSlider", fovSlider);
         Assign(settings, "volumeVal", volumeValue);
         Assign(settings, "sensitivityVal", sensitivityValue);
+        Assign(settings, "fovVal", fovValue);
         Assign(settings, "randomSizeToggle", randomSize);
+        Assign(settings, "redSlider", red);
+        Assign(settings, "greenSlider", green);
+        Assign(settings, "blueSlider", blue);
+        Assign(settings, "redVal", redValue);
+        Assign(settings, "greenVal", greenValue);
+        Assign(settings, "blueVal", blueValue);
+        Assign(settings, "colorPreview", preview);
+        Assign(settings, "hexVal", hex);
 
         UnityEventTools.AddPersistentListener(volume.onValueChanged, settings.SetVolume);
         UnityEventTools.AddPersistentListener(sensitivity.onValueChanged, settings.SetSensitivity);
+        UnityEventTools.AddPersistentListener(fovSlider.onValueChanged, settings.SetFov);
         UnityEventTools.AddPersistentListener(randomSize.onValueChanged, settings.SetRandomSize);
+        UnityEventTools.AddPersistentListener(red.onValueChanged, settings.SetColour);
+        UnityEventTools.AddPersistentListener(green.onValueChanged, settings.SetColour);
+        UnityEventTools.AddPersistentListener(blue.onValueChanged, settings.SetColour);
+        for (int i = 0; i < swatchButtons.Length; i++)
+        {
+            UnityEventTools.AddIntPersistentListener(swatchButtons[i].onClick, settings.PickSwatch, i);
+        }
         Wire(back, menu.toMenu);
     }
 
-    private static Slider SliderRow(Transform parent, string label, out TextMeshProUGUI valueText, string initial)
+    private static Slider SliderRow(Transform parent, string label, out TextMeshProUGUI valueText, string initial, float width = 960f, float labelWidth = 300f)
     {
+        const float valueWidth = 140f;
+        const float spacing = 24f;
         RectTransform row = NewRect(label + "Row", parent);
-        LE(row.gameObject, 960f, 64f);
-        HStack(row, 24f, TextAnchor.MiddleCenter);
+        LE(row.gameObject, width, 64f);
+        HStack(row, spacing, TextAnchor.MiddleCenter);
 
         TextMeshProUGUI name = Txt("Label", row, label, 36f, UITheme.TextPrimary, FontStyles.Normal, TextAlignmentOptions.Left);
-        LE(name.gameObject, 300f);
-        Slider slider = NewSlider(row, label + "Slider", new Vector2(460f, 56f));
+        LE(name.gameObject, labelWidth);
+        Slider slider = NewSlider(row, label + "Slider", new Vector2(width - labelWidth - valueWidth - spacing * 2f, 56f));
         valueText = Txt("Value", row, initial, 34f, UITheme.Accent, FontStyles.Bold, TextAlignmentOptions.Right);
-        LE(valueText.gameObject, 140f);
+        LE(valueText.gameObject, valueWidth);
         return slider;
     }
 
@@ -876,10 +994,12 @@ public static class UIBuilder
         switch (sceneName)
         {
             case "Settings":
-                errors += CheckFields<Settings>(sceneName, "volumeSlider", "sensitivitySlider", "volumeVal", "sensitivityVal", "randomSizeToggle");
+                errors += CheckFields<Settings>(sceneName, "volumeSlider", "sensitivitySlider", "fovSlider", "volumeVal", "sensitivityVal", "fovVal", "randomSizeToggle",
+                    "redSlider", "greenSlider", "blueSlider", "redVal", "greenVal", "blueVal", "colorPreview", "hexVal");
                 break;
             case "SelectMode":
                 errors += CheckFields<ModeCardView>(sceneName, "highScoreText");
+                errors += CheckFields<GameModeSelect>(sceneName, "lengthPanel", "lengthTitle", "lengthButtons");
                 break;
             case "SampleScene":
                 errors += CheckFields<GameManager>(sceneName, "timerText", "resultScreen", "scoreResult", "accuracyResult",

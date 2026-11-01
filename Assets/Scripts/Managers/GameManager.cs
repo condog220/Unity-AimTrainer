@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        timer = 30f;
+        timer = GameModeSelect.roundLength;
         finished = false;
     }
 
@@ -79,7 +79,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         resultScreen.SetActive(false);
 
-        timer = 30f;
+        timer = GameModeSelect.roundLength;
         finished = false;
 
         if (ScoreManager.instance != null)
