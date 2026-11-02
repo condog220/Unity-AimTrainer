@@ -10,12 +10,14 @@ public class PlayerMovement : MonoBehaviour
     public float horizontalInput;
     Vector3 moveDirection;
     Rigidbody rb;
+    Transform cam;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        cam = Camera.main.transform;
         rb.freezeRotation = true;
     }
 
@@ -35,6 +37,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if(GameModeSelect.currentMode?.UsesMovement == true)
         {
+            // Strafe relative to where the player is facing (yaw only), not world X.
+            orientation.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
             horizontalInput = Input.GetAxisRaw("Horizontal");
         }
     }
