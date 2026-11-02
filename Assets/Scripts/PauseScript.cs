@@ -19,8 +19,8 @@ public class PauseScript : MenuManager
     // Update is called once per frame
     void Update()
     {
-        // The results screen owns the pause state once the round is over.
-        if (GameManager.finished)
+        // The results screen owns the pause state once the round is over; the countdown cannot be paused.
+        if (GameManager.finished || GameManager.counting)
         {
             return;
         }

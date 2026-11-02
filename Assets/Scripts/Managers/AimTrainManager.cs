@@ -75,7 +75,7 @@ public class AimTrainManager : MonoBehaviour
 
     private void DetectHit()
     {
-        if (PauseScript.isPaused)
+        if (GameManager.InputLocked)
         {
             return;
         }

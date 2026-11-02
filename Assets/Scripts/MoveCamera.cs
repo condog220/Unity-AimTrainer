@@ -20,7 +20,7 @@ public class MoveCamera : MonoBehaviour
     // LateUpdate so the camera follows the Rigidbody player after physics has moved it.
     void LateUpdate()
     {
-        if (PauseScript.isPaused)
+        if (GameManager.InputLocked)
         {
             return;
         }

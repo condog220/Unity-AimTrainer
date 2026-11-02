@@ -471,6 +471,11 @@ public static class UIBuilder
 
         Crosshair crosshair = BuildCrosshair(root);
 
+        // Built before the pause / results overlays so they draw on top of it.
+        TextMeshProUGUI countdown = Txt("Countdown", root, "3", 260f, UITheme.TextPrimary, FontStyles.Bold);
+        Place(countdown.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(700f, 340f));
+        countdown.gameObject.SetActive(false);
+
         HUDController hud = root.gameObject.AddComponent<HUDController>();
         Assign(hud, "timerText", timerValue);
         Assign(hud, "scoreText", scoreValue);
@@ -530,6 +535,7 @@ public static class UIBuilder
         Assign(gm, "shotsResult", shotsResult);
         Assign(gm, "modeResult", modeText);
         Assign(gm, "newRecordBadge", badge.gameObject);
+        Assign(gm, "countdownText", countdown);
 
         Assign(pause, "pauseMenu", pausePanel);
         Assign(pause, "gameManager", gm);
@@ -1003,7 +1009,7 @@ public static class UIBuilder
                 break;
             case "SampleScene":
                 errors += CheckFields<GameManager>(sceneName, "timerText", "resultScreen", "scoreResult", "accuracyResult",
-                    "highScoreResult", "shotsResult", "modeResult", "newRecordBadge");
+                    "highScoreResult", "shotsResult", "modeResult", "newRecordBadge", "countdownText");
                 errors += CheckFields<ScoreManager>(sceneName, "scoreText", "accuracyText");
                 errors += CheckFields<PauseScript>(sceneName, "pauseMenu", "gameManager");
                 errors += CheckFields<HUDController>(sceneName, "timerText", "scoreText");
