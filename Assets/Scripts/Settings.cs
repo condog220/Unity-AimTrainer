@@ -78,12 +78,14 @@ public class Settings : MonoBehaviour
     {
         SettingsManager.volume = vol;
         volumeVal.text = VolumeLabel(vol);
+        SettingsManager.NotifyChanged();
     }
 
     public void SetSensitivity(float sens)
     {
         SettingsManager.sensitivity = sens;
         sensitivityVal.text = SensitivityLabel(sens);
+        SettingsManager.NotifyChanged();
     }
 
     public void SetRandomSize(bool on)
@@ -96,6 +98,7 @@ public class Settings : MonoBehaviour
     {
         SettingsManager.fov = Mathf.Clamp(Mathf.RoundToInt(fov), SettingsManager.MinFov, SettingsManager.MaxFov);
         fovVal.text = FovLabel(SettingsManager.fov);
+        SettingsManager.NotifyChanged();
     }
 
     // Shared by all three colour sliders; the argument is ignored because all channels are re-read.
@@ -107,6 +110,7 @@ public class Settings : MonoBehaviour
             (byte)Mathf.RoundToInt(blueSlider.value),
             255);
         RefreshColourUI();
+        SettingsManager.NotifyChanged();
     }
 
     public void PickSwatch(int index)
@@ -114,6 +118,7 @@ public class Settings : MonoBehaviour
         SettingsManager.targetColor = Swatches[index];
         SetColourSliders(SettingsManager.targetColor);
         RefreshColourUI();
+        SettingsManager.NotifyChanged();
     }
 
     private void SetColourSliders(Color32 c)

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public interface GameMode
 {
-    // Hold-to-fire at the manager's fire rate instead of one shot per click.
+    // Continuous mode: scored by time on target while fire is held, instead of one shot per click.
     bool AutoFire { get; }
     // Whether the player strafes in this mode.
     bool UsesMovement { get; }
@@ -12,6 +12,7 @@ public interface GameMode
 
     void Update();
 
+    // Called once per hit, or every on-target frame in AutoFire modes.
     // Owns removing the target from ActiveTargets and destroying it.
     void HandleHit(GameObject target);
 }

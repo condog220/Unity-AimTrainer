@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_Text accuracyResult;
     [SerializeField] TMP_Text highScoreResult;
     [SerializeField] TMP_Text shotsResult;
+    [SerializeField] TMP_Text shotsLabel;
     [SerializeField] TMP_Text modeResult;
     [SerializeField] GameObject newRecordBadge;
     [SerializeField] TMP_Text countdownText;
@@ -152,7 +153,14 @@ public class GameManager : MonoBehaviour
         highScoreResult.text = score.getHighScore().ToString();
         if (shotsResult != null)
         {
-            shotsResult.text = score.TotalHits + " / " + score.TotalShots;
+            // TrackShot has no discrete shots; it shows time on target instead.
+            shotsResult.text = score.TimeBased
+                ? score.TrackedTime.ToString("F1") + "s / " + score.TrackElapsed.ToString("F1") + "s"
+                : score.TotalHits + " / " + score.TotalShots;
+        }
+        if (shotsLabel != null)
+        {
+            shotsLabel.text = score.TimeBased ? "Time on target" : "Shots (hits / total)";
         }
         if (modeResult != null)
         {

@@ -6,6 +6,7 @@ public class PauseScript : MenuManager
     public static bool isPaused;
 
     [SerializeField] GameObject pauseMenu;
+    [SerializeField] GameObject settingsPanel;
     [SerializeField] GameManager gameManager;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -28,7 +29,15 @@ public class PauseScript : MenuManager
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Debug.Log("Escape Pressed");
-            PauseGame();
+            // Esc backs out of the settings panel first, then toggles pause.
+            if (settingsPanel != null && settingsPanel.activeSelf)
+            {
+                CloseSettings();
+            }
+            else
+            {
+                PauseGame();
+            }
         }
     }
 
@@ -40,6 +49,20 @@ public class PauseScript : MenuManager
 
         Cursor.visible = isPaused;
         Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
+    }
+
+    // Pause menu "Settings": swaps the pause card for the settings card and back.
+    public void OpenSettings()
+    {
+        pauseMenu.SetActive(false);
+        settingsPanel.SetActive(true);
+    }
+
+    public void CloseSettings()
+    {
+        SettingsManager.SaveSettings();
+        settingsPanel.SetActive(false);
+        pauseMenu.SetActive(true);
     }
 
     // Pause menu "Restart": close the pause menu, then start a fresh round.

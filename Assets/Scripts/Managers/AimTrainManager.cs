@@ -24,10 +24,21 @@ public class AimTrainManager : MonoBehaviour
         instance = this;
     }
 
+    void OnEnable()
+    {
+        SettingsManager.Changed += ApplySettings;
+    }
+
+    // Static event: unsubscribe, or it would keep calling this manager after the scene is gone.
+    void OnDisable()
+    {
+        SettingsManager.Changed -= ApplySettings;
+    }
+
     void Start()
     {
         cam = Camera.main;
-        hitSound.volume = SettingsManager.volume;
+        ApplySettings();
         if(GameModeSelect.currentMode != null)
         {
             SetScenario(GameModeSelect.currentMode);
@@ -43,14 +54,32 @@ public class AimTrainManager : MonoBehaviour
     {
         currentGameMode.Update();
 
-        bool fire = currentGameMode.AutoFire
-            ? Input.GetMouseButton(0) && Time.time > nextFire
-            : Input.GetMouseButtonDown(0);
-
-        if (fire)
+        // Countdown, pause and results: nothing fires or scores.
+        if (GameManager.InputLocked)
         {
-            nextFire = Time.time + fireRate;
+            return;
+        }
+
+        if (currentGameMode.AutoFire)
+        {
+            Track();
+        }
+        else if (Input.GetMouseButtonDown(0))
+        {
             DetectHit();
+        }
+    }
+
+    // Also runs when a setting is changed from the pause menu.
+    private void ApplySettings()
+    {
+        hitSound.volume = SettingsManager.volume;
+        foreach (GameObject target in ActiveTargets)
+        {
+            if (target != null)
+            {
+                SettingsManager.ApplyTargetColor(target);
+            }
         }
     }
 
@@ -73,14 +102,39 @@ public class AimTrainManager : MonoBehaviour
     }
 
 
-    private void DetectHit()
+    private bool RaycastTarget(out RaycastHit hit)
     {
-        if (GameManager.InputLocked)
+        return Physics.Raycast(cam.ViewportPointToRay(new Vector3(0.5f, 0.5f)), out hit, Mathf.Infinity, layer);
+    }
+
+    // Continuous modes: every frame the crosshair is on the target while fire is held counts as time on target.
+    private void Track()
+    {
+        RaycastHit hit = default;
+        bool onTarget = Input.GetMouseButton(0) && RaycastTarget(out hit);
+        ScoreManager.instance.AddTrackingTime(Time.deltaTime, onTarget);
+        if (!onTarget)
         {
             return;
         }
 
-        bool rayHit = Physics.Raycast(cam.ViewportPointToRay(new Vector3(0.5f, 0.5f)), out RaycastHit hit, Mathf.Infinity, layer);
+        currentGameMode.HandleHit(hit.collider.gameObject);
+
+        // Sound and hit marker tick at the fire rate, not every frame.
+        if (Time.time >= nextFire)
+        {
+            nextFire = Time.time + fireRate;
+            hitSound.PlayOneShot(hitClip);
+            if (Crosshair.instance != null)
+            {
+                Crosshair.instance.Flash();
+            }
+        }
+    }
+
+    private void DetectHit()
+    {
+        bool rayHit = RaycastTarget(out RaycastHit hit);
 
         if (rayHit)
         {
