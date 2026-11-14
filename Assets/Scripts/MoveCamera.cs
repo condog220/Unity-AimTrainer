@@ -10,11 +10,34 @@ public class MoveCamera : MonoBehaviour
     [SerializeField] private Transform player;
     public Transform camPos;
     public Transform gunPosition;
+    private Camera cam;
+
+    void Awake()
+    {
+        cam = GetComponent<Camera>();
+    }
+
+    void OnEnable()
+    {
+        SettingsManager.Changed += ApplySettings;
+    }
+
+    // Static event: unsubscribe, or it would keep calling this camera after the scene is gone.
+    void OnDisable()
+    {
+        SettingsManager.Changed -= ApplySettings;
+    }
 
     void Start(){
         Cursor.lockState = CursorLockMode.Locked;
+        ApplySettings();
+    }
+
+    // Also runs when a setting is changed from the pause menu.
+    private void ApplySettings()
+    {
         userSens = SettingsManager.sensitivity;
-        GetComponent<Camera>().fieldOfView = SettingsManager.fov;
+        cam.fieldOfView = SettingsManager.fov;
     }
 
     // LateUpdate so the camera follows the Rigidbody player after physics has moved it.

@@ -14,6 +14,9 @@ public class SettingsManager : MonoBehaviour
     public static readonly Color32 DefaultTargetColor = new Color32(255, 23, 0, 255);
     public static Color32 targetColor = DefaultTargetColor;
 
+    // Raised when a setting changes at runtime, so a running round can apply it (pause-menu settings).
+    public static event System.Action Changed;
+
     private const string VolumeKey = "GameVolume";
     private const string SensitivityKey = "GameSensitivity";
     private const string FovKey = "GameFov";
@@ -55,6 +58,11 @@ public class SettingsManager : MonoBehaviour
 
         int packed = PlayerPrefs.GetInt(TargetColorKey, (DefaultTargetColor.r << 16) | (DefaultTargetColor.g << 8) | DefaultTargetColor.b);
         targetColor = new Color32((byte)((packed >> 16) & 255), (byte)((packed >> 8) & 255), (byte)(packed & 255), 255);
+    }
+
+    public static void NotifyChanged()
+    {
+        Changed?.Invoke();
     }
 
     // Per-renderer override, so the shared material asset is never modified.

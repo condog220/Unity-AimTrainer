@@ -5,7 +5,9 @@ public class Tracking : GameMode
 
     private AimTrainManager manager;
     private int maxSpheres = 1;
-    public int health = 100;
+    private const float SecondsToKill = 3f;
+    // Seconds of tracking the current target has left.
+    private float health;
     private float minX = -4f;
     private float maxX = 4f;
     private float minY = 2f;
@@ -17,7 +19,7 @@ public class Tracking : GameMode
     public void StartMode(AimTrainManager manager)
     {
         this.manager = manager;
-        health = 100;
+        health = SecondsToKill;
 
         for (int i = 0; i < maxSpheres; i++)
         {
@@ -33,15 +35,16 @@ public class Tracking : GameMode
         }
     }
 
+    // Called every frame the crosshair is on the target while firing, so health drains in real time.
     public void HandleHit(GameObject target)
     {
-        health -= 20;
+        health -= Time.deltaTime;
 
-        if(health <= 0)
+        if(health <= 0f)
         {
             manager.ActiveTargets.Remove(target);
             Object.Destroy(target);
-            health = 100;
+            health = SecondsToKill;
         }
     }
 

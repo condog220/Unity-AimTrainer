@@ -16,6 +16,13 @@ public class ScoreManager : MonoBehaviour
     private int totalShots = 0;
     private int totalHits = 0;
 
+    // Continuous (TrackShot) scoring: seconds on target and seconds of the round played so far.
+    // 1000 per second matches the old 200 per 0.2 s tick, so earlier TrackShot bests stay comparable.
+    private const int PointsPerSecond = 1000;
+    private const int PulseEvery = 200;
+    private float trackedTime = 0;
+    private float trackElapsed = 0;
+
     [SerializeField] TMP_Text scoreText;
     [SerializeField] TMP_Text accuracyText;
 
@@ -24,6 +31,9 @@ public class ScoreManager : MonoBehaviour
     public string ModeName { get; private set; }
     public int TotalShots => totalShots;
     public int TotalHits => totalHits;
+    public bool TimeBased => trackElapsed > 0f;
+    public float TrackedTime => trackedTime;
+    public float TrackElapsed => trackElapsed;
 
     void Awake()
     {
@@ -82,6 +92,34 @@ public class ScoreManager : MonoBehaviour
 
     }
 
+    // Call every frame of a continuous round. Accuracy is on-target time over all time played,
+    // so not firing counts against it.
+    public void AddTrackingTime(float dt, bool onTarget)
+    {
+        trackElapsed += dt;
+        if (onTarget)
+        {
+            trackedTime += dt;
+        }
+
+        int newScore = Mathf.FloorToInt(trackedTime * PointsPerSecond);
+        // The HUD "punch" fires every PulseEvery points instead of every frame.
+        bool pulse = newScore / PulseEvery != score / PulseEvery;
+        if (newScore != score)
+        {
+            score = newScore;
+            scoreText.text = score.ToString();
+        }
+
+        accuracy = trackElapsed > 0f ? trackedTime / trackElapsed * 100f : 0f;
+        accuracyText.text = accuracy.ToString("F2") + "%";
+
+        if (pulse)
+        {
+            ScoreChanged?.Invoke();
+        }
+    }
+
     public int getScore()
     {
         return score;
@@ -97,6 +135,8 @@ public class ScoreManager : MonoBehaviour
         score = 0;
         totalShots = 0;
         totalHits = 0;
+        trackedTime = 0;
+        trackElapsed = 0;
         scoreText.text = "0";
         updateAccuracy();
     }

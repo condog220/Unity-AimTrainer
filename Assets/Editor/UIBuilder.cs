@@ -21,6 +21,13 @@ public static class UIBuilder
 
     private static Sprite sRounded, sCircle, sGlow, sGradient, sTracking;
 
+    // Serialized fields BuildSettingsCard assigns; checked by Validate UI in every scene that has a Settings.
+    private static readonly string[] SettingsFields =
+    {
+        "volumeSlider", "sensitivitySlider", "fovSlider", "volumeVal", "sensitivityVal", "fovVal", "randomSizeToggle",
+        "redSlider", "greenSlider", "blueSlider", "redVal", "greenVal", "blueVal", "colorPreview", "hexVal",
+    };
+
     // ------------------------------------------------------------------ menu items
 
     [MenuItem("AimTrain/Rebuild UI/All Scenes")]
@@ -267,10 +274,16 @@ public static class UIBuilder
         FitContent(card.rectTransform);
         AddShadow(card.gameObject);
 
-        TextMeshProUGUI title = Txt("Title", card.transform, "SETTINGS", 72f, UITheme.TextPrimary, FontStyles.Bold);
+        BuildSettingsCard(card.rectTransform, settings, menu.toMenu);
+    }
+
+    // Fills a vertical-stack card with every setting. Shared by the Settings scene and the in-game pause menu.
+    private static void BuildSettingsCard(RectTransform card, Settings settings, UnityAction onBack)
+    {
+        TextMeshProUGUI title = Txt("Title", card, "SETTINGS", 72f, UITheme.TextPrimary, FontStyles.Bold);
         LE(title.gameObject, h: 90f);
 
-        RectTransform columns = NewRect("Columns", card.transform);
+        RectTransform columns = NewRect("Columns", card);
         HStack(columns, 80f, TextAnchor.UpperCenter);
 
         // ---- left column: general settings
@@ -344,7 +357,7 @@ public static class UIBuilder
             channel.wholeNumbers = true;
         }
 
-        Button back = Btn("BackButton", card.transform, "BACK", new Vector2(360f, 76f), true);
+        Button back = Btn("BackButton", card, "BACK", new Vector2(360f, 76f), true);
 
         Assign(settings, "volumeSlider", volume);
         Assign(settings, "sensitivitySlider", sensitivity);
@@ -373,7 +386,7 @@ public static class UIBuilder
         {
             UnityEventTools.AddIntPersistentListener(swatchButtons[i].onClick, settings.PickSwatch, i);
         }
-        Wire(back, menu.toMenu);
+        Wire(back, onBack);
     }
 
     private static Slider SliderRow(Transform parent, string label, out TextMeshProUGUI valueText, string initial, float width = 960f, float labelWidth = 300f)
@@ -458,6 +471,8 @@ public static class UIBuilder
         GameManager gm = Need<GameManager>();
         ScoreManager sm = Need<ScoreManager>();
         PauseScript pause = Need<PauseScript>();
+        // Lives on its own always-active object so its Start runs even though the panel begins hidden.
+        Settings settings = NeedOrCreate<Settings>("Settings");
 
         RectTransform root = NewCanvas("Canvas");
 
@@ -487,13 +502,20 @@ public static class UIBuilder
         Spacer(pauseCard, 6f);
         Button resume = Btn("ResumeButton", pauseCard, "RESUME", new Vector2(440f, 84f), true, 36f);
         Button restart = Btn("RestartButton", pauseCard, "RESTART", new Vector2(440f, 76f), false);
+        Button settingsButton = Btn("SettingsButton", pauseCard, "SETTINGS", new Vector2(440f, 76f), false);
         Button menuButton = Btn("MenuButton", pauseCard, "MAIN MENU", new Vector2(440f, 76f), false);
         TextMeshProUGUI pauseControls = Txt("Hint", pauseCard, "Esc: resume", 24f, UITheme.TextMuted);
         LE(pauseControls.gameObject, h: 34f);
         Wire(resume, pause.PauseGame);
         Wire(restart, pause.RestartRound);
+        Wire(settingsButton, pause.OpenSettings);
         Wire(menuButton, pause.toMenu);
         pausePanel.SetActive(false);
+
+        // Pause > Settings: the same card as the Settings scene, in its own overlay.
+        GameObject settingsPanel = Overlay(root, "SettingsPanel", 1500f, out RectTransform settingsCard);
+        BuildSettingsCard(settingsCard, settings, pause.CloseSettings);
+        settingsPanel.SetActive(false);
 
         // Results
         RectTransform resultsCard;
@@ -510,7 +532,7 @@ public static class UIBuilder
 
         StatRow(resultsCard, "Score", out TextMeshProUGUI scoreResult);
         StatRow(resultsCard, "Accuracy", out TextMeshProUGUI accuracyResult);
-        StatRow(resultsCard, "Shots (hits / total)", out TextMeshProUGUI shotsResult);
+        TextMeshProUGUI shotsLabel = StatRow(resultsCard, "Shots (hits / total)", out TextMeshProUGUI shotsResult);
         StatRow(resultsCard, "High score", out TextMeshProUGUI highScoreResult);
 
         Spacer(resultsCard, 10f);
@@ -533,12 +555,15 @@ public static class UIBuilder
         Assign(gm, "accuracyResult", accuracyResult);
         Assign(gm, "highScoreResult", highScoreResult);
         Assign(gm, "shotsResult", shotsResult);
+        Assign(gm, "shotsLabel", shotsLabel);
         Assign(gm, "modeResult", modeText);
         Assign(gm, "newRecordBadge", badge.gameObject);
         Assign(gm, "countdownText", countdown);
+        Assign(gm, "pauseHint", pauseHint.gameObject);
 
         Assign(pause, "pauseMenu", pausePanel);
         Assign(pause, "gameManager", gm);
+        Assign(pause, "settingsPanel", settingsPanel);
     }
 
     private static void StatPill(Transform parent, string name, string label, string value, Vector2 anchor, Vector2 pos, Vector2 size, out TextMeshProUGUI valueText)
@@ -605,7 +630,8 @@ public static class UIBuilder
         return dim.gameObject;
     }
 
-    private static void StatRow(Transform parent, string label, out TextMeshProUGUI valueText)
+    // Returns the label so a caller can retitle the row at runtime.
+    private static TextMeshProUGUI StatRow(Transform parent, string label, out TextMeshProUGUI valueText)
     {
         RectTransform row = NewRect(label + "Row", parent);
         LE(row.gameObject, 620f, 52f);
@@ -614,6 +640,7 @@ public static class UIBuilder
         LE(name.gameObject, fw: 1f);
         valueText = Txt("Value", row, "0", 38f, UITheme.TextPrimary, FontStyles.Bold, TextAlignmentOptions.Right);
         LE(valueText.gameObject, 240f);
+        return name;
     }
 
     // ------------------------------------------------------------------ shared building blocks
@@ -1000,8 +1027,7 @@ public static class UIBuilder
         switch (sceneName)
         {
             case "Settings":
-                errors += CheckFields<Settings>(sceneName, "volumeSlider", "sensitivitySlider", "fovSlider", "volumeVal", "sensitivityVal", "fovVal", "randomSizeToggle",
-                    "redSlider", "greenSlider", "blueSlider", "redVal", "greenVal", "blueVal", "colorPreview", "hexVal");
+                errors += CheckFields<Settings>(sceneName, SettingsFields);
                 break;
             case "SelectMode":
                 errors += CheckFields<ModeCardView>(sceneName, "highScoreText");
@@ -1009,9 +1035,10 @@ public static class UIBuilder
                 break;
             case "SampleScene":
                 errors += CheckFields<GameManager>(sceneName, "timerText", "resultScreen", "scoreResult", "accuracyResult",
-                    "highScoreResult", "shotsResult", "modeResult", "newRecordBadge", "countdownText");
+                    "highScoreResult", "shotsResult", "modeResult", "newRecordBadge", "countdownText", "shotsLabel", "pauseHint");
                 errors += CheckFields<ScoreManager>(sceneName, "scoreText", "accuracyText");
-                errors += CheckFields<PauseScript>(sceneName, "pauseMenu", "gameManager");
+                errors += CheckFields<PauseScript>(sceneName, "pauseMenu", "gameManager", "settingsPanel");
+                errors += CheckFields<Settings>(sceneName, SettingsFields);
                 errors += CheckFields<HUDController>(sceneName, "timerText", "scoreText");
                 errors += CheckFields<Crosshair>(sceneName, "hitMarker");
                 errors += CheckFields<UIPanel>(sceneName, "content");
